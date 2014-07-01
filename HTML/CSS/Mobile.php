@@ -151,25 +151,25 @@ class HTML_CSS_Mobile
 
     // 同様に、<br />が<br>になってしまう問題のために退避
     #TODO: meta hr 等も同様だが、危険なのでさける。。。本質的な解決になっていない。
-    $document = preg_replace('/<(br\s*.*\/)>/', 'HTMLCSSBRESCAPE%$1%::::::::', $document);
+    $document = preg_replace('~<(br\s*?[^/]*?/)>~Us', 'HTMLCSSBRESCAPE%$1%::::::::', $document);
+    $document = preg_replace('~<(input\s*?[^/]*?/)>~Us', 'HTMLCSSINPUTESCAPE%$1%::::::::', $document);
 
     // 文字参照をエスケープ
     $document = preg_replace('/&(#(?:\d+|x[0-9a-fA-F]+)|[A-Za-z0-9]+);/', 'HTMLCSSINLINERESCAPE%$1%::::::::', $document);
 
     // CDATAを退避
-    $cdata_pattern = '/' . preg_quote('<![CDATA[') . '.*' . preg_quote(']]>') . '/Us';
+    $cdata_pattern = '/' . preg_quote('<style') . '.+?' .preg_quote('<![CDATA[') . '.*?' . preg_quote(']]>') .'.*?'. preg_quote('style>') . '/Us';
     $escaped_cdata = null;
     if($num_matched = preg_match_all($cdata_pattern, $document, $e))
     {
       $escaped_cdata = $e[0];
       for($i = 0; $i < $num_matched; $i++)
       {
-        $cdata_replacements[] = "HTMLCSSCDATAPLACEHOLDER$i::::::::";
+        $cdata_replacements[] = "<meta name=\"HTMLCSS\" content=\"HTMLCSSCDATAPLACEHOLDER$i::::::::\">";
         $cdata_patterns[] = $cdata_pattern;
       }
       $document = preg_replace($cdata_patterns, $cdata_replacements, $document, 1);
     }
-
 
     // 機種依存文字がエラーになる問題を回避するため、UTF-8に変換して処理
     $doc_encoding = mb_detect_encoding($document, 'sjis-win, UTF-8, eucjp-win');
@@ -289,7 +289,20 @@ class HTML_CSS_Mobile
     $result = preg_replace('/HTMLCSSINLINERESCAPE%(#(?:\d+|x[0-9a-fA-F]+)|[A-Za-z0-9]+)%::::::::/', '&$1;', $result);
 
     // <br />を復元
-    $result = preg_replace('/HTMLCSSBRESCAPE%(br\s*.*\/)%::::::::/', '<$1>', $result);
+    $result = preg_replace('~HTMLCSSBRESCAPE%(br\s*[^%/]*?/)%::::::::~', '<$1>', $result);
+    $result = preg_replace('~HTMLCSSINPUTESCAPE%(input\s*[^%/]*?/)%::::::::~', '<$1>', $result);
+
+    // <meta /> を正規化
+    $result = preg_replace('|<(meta[^>]+?[^/])>|', '<$1 />', $result);
+
+    // <hr /> を正規化
+    $result = preg_replace('|<(hr[^/>]*?)>|', '<$1 />', $result);
+
+    // <input /> を正規化
+    $result = preg_replace('|<(input[^/>]*?)>|', '<$1 />', $result);
+
+    // <img /> を正規化
+    $result = preg_replace('|<(img[^>]*?)>|', '<$1 />', $result);
 
     // 退避したXML宣言を復元
     if (!empty($declaration))
@@ -409,3 +422,4 @@ class HTML_CSS_Mobile
     #TODO: importの取得が上手く出来ない？
   }
 }
+
