@@ -1,0 +1,14 @@
+{
+    "name" : "itcom/HTML_CSS_Mobile",
+	"type": "library",
+	"license": "BSD",
+    "autoload": {
+        "classmap": [
+            ""
+        ]
+    },
+	"include-path": [
+		"/"
+	],
+	"description": ""
+}
